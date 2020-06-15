@@ -48,7 +48,7 @@ export class MetricFilter extends Resource {
   }
 
   /**
-   * Return the given named metric for this Activity
+   * Return the given named metric for this Metric Filter
    *
    * @default avg over 5 minutes
    */
