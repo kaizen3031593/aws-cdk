@@ -3,6 +3,7 @@ import * as iam from '@aws-cdk/aws-iam';
 import * as s3 from '@aws-cdk/aws-s3';
 import { Construct, Duration, Resource, ResourceProps } from '@aws-cdk/core';
 import { CfnCanary } from '../lib';
+import { Code } from './code';
 
 // ALERT: this should eventually go into Runtime.ts
 /**
@@ -37,21 +38,6 @@ export class Runtime {
    */
   public toString(): string {
     return this.name;
-  }
-}
-
-// ALERT: should eventually go into Code.ts
-/**
- * The code of the canary. Currently only supports inline code.
- */
-export class Code {
-  /**
-   * The inline script of the code as expected by the Canary resource.
-   */
-  public readonly script: string;
-
-  constructor(script: string) {
-    this.script = script;
   }
 }
 
@@ -167,72 +153,78 @@ export interface CanaryOptions extends ResourceProps {
   readonly expression?: Expression;
 
   /**
-   * whether or not canary should start after creation
+   * Whether or not the canary should start after creation.
+   *
    * @default false
    */
   readonly startCanary?: boolean;
 
   /**
-   * how many days should successful runs be retained
+   * How many days should successful runs be retained
+   *
    * @default Duration.days(31)
    */
   readonly successRetentionPeriod?: Duration;
 
   /**
-   * how many days should failed runs be retained
+   * How many days should failed runs be retained
+   *
    * @default Duration.days(31)
    */
   readonly failureRetentionPeriod?: Duration;
 
   /**
-   * if endpoint is in vpc
+   * If the endpoint that the canary is testing is inside of a vpc, then you must specify
+   * which vpc.
+   *
    * @default none
    */
   readonly vpc?: ec2.IVpc;
 }
 
 /**
- * properties of a canary
+ * Properties of a canary
  */
 export interface CanaryProps extends CanaryOptions {
   /**
-   * handler
+   * The handler of the code.
    */
   readonly handler: string;
 
   /**
-   * code
+   * The canary code. Currently only supported by inline code. In the future,
+   * it will be possible to specify an asset or an s3 bucket where the code is.
    */
   readonly code: Code;
 
   /**
-   * runtime
+   * The runtime version of the canary. Currently, only 'syn-1.0' is allowed.
    */
   readonly runtime: Runtime;
 }
 
 /**
- * base of a canary
+ * Base of a canary
  */
 export abstract class CanaryBase extends Resource {
   /**
-   * handler
+   * The handler of the canary.
    */
   public abstract readonly handler: string;
 
   /**
-   * code
+   * The code of the canary.
    */
   public abstract readonly code: Code;
 
   /**
-   * runtime
+   * The runtime version of the canary. Currently only 'syn-1.0' is a valid runtime.
    */
   public abstract readonly runtime: Runtime;
 }
 
 /**
- * the canary
+ * The canary.
  */
 export class Canary extends CanaryBase {
   /**
@@ -241,7 +233,7 @@ export class Canary extends CanaryBase {
   public readonly handler: string;
 
   /**
-   * The code that gets run
+   * The code of the canary.
    */
   public readonly code: Code;
 
@@ -261,60 +253,62 @@ export class Canary extends CanaryBase {
   public readonly role: iam.IRole;
 
   /**
-   * the timeout
+   * How long the canary should run before timing out, in seconds.
    */
   public readonly timeout: Duration;
 
   /**
-   * the duration
+   * How long the canary should be running, in seconds.
    */
   public readonly duration: Duration;
 
   /**
-   * the rate
+   * The rate that the canary should run during the duration time.
    */
   public readonly expression: Expression;
 
   /**
-   * the start canary
+   * Whether or not the canary should start after creation.
    */
   public readonly startCanary: boolean;
 
   /**
-   * the success retention period
+   * How long successful runs should be stored in s3, in days.
+   *
    * @default 31
    */
   public readonly successRetentionPeriod?: Duration;
 
   /**
-   * the failure retention period
+   * How long failed runs should be stored in s3, in days.
+   *
    * @default 31
    */
   public readonly failureRetentionPeriod?: Duration;
 
   /**
-   * vpc
-   * @default undefined
+   * VPC network to place Canary network interfaces
+   *
+   * Specify this if the Canary needs to access resources in a VPC.
+   *
+   * @default - Canary does not need to access a VPC.
    */
   public readonly vpc?: ec2.IVpc;
 
   /**
-   * The ID of the canary.
-   *
+   * Canary ID
    * @attribute
    */
   public readonly canaryId: string;
 
   /**
-   * The state of the canary.
-   *
+   * Canary State
    * @attribute
    */
   public readonly canaryState: string;
 
   /**
-   * The name of the canary.
-   *
+   * Canary Name
    * @attribute
    */
   public readonly canaryName: string;
@@ -359,6 +353,8 @@ export class Canary extends CanaryBase {
     this.code = props.code;
     this.runtime = props.runtime;
 
+    const code = props.code.bind(this);
+
     const resource: CfnCanary = new CfnCanary(this, 'Resource', {
       artifactS3Location: this.artifactS3Location,
       executionRoleArn: this.role.roleArn,
@@ -369,7 +365,7 @@ export class Canary extends CanaryBase {
       schedule: { durationInSeconds: String(this.duration.toSeconds()), expression: this.expression.toString() },
       failureRetentionPeriod: this.failureRetentionPeriod?.toDays(),
       successRetentionPeriod: this.successRetentionPeriod?.toDays(),
-      code: { handler: this.handler, script: this.code.script},
+      code: { handler: this.handler, script: code.inlineCode},
     });
     this.canaryId = resource.attrId;
     this.canaryState = resource.attrState;
