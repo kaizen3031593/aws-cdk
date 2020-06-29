@@ -7,7 +7,7 @@ import { CfnCanary } from '../lib';
 import { Code } from './code';
 
 /**
- * The expression specifies the rate that the Canary runs.
+ * The rate specifies the rate that the Canary runs.
  *
  * The rate forms the expression string that is expected in the Canary definition
  * as part of the Schedule property. A valid expression has the syntax 'rate(number unit)'
@@ -93,7 +93,7 @@ export interface CanaryOptions extends ResourceProps {
   /**
    * How many seconds the canary should run before timing out.
    *
-   * @default - same amount as expression
+   * @default - same amount as rate
    */
   readonly timeout?: Duration;
 
@@ -115,7 +115,7 @@ export interface CanaryOptions extends ResourceProps {
    *
    * @default 'rate(0 minute)'
    */
-  readonly expression?: Rate;
+  readonly rate?: Rate;
 
   /**
    * Whether or not the canary should start after creation.
