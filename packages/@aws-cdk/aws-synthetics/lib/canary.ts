@@ -299,19 +299,22 @@ export class Canary extends CanaryBase {
   public readonly vpc?: ec2.IVpc;
 
   /**
-   * canary id
+   * The ID of the canary.
+   *
    * @attribute
    */
   public readonly canaryId: string;
 
   /**
-   * canary state
+   * The state of the canary.
+   *
    * @attribute
    */
   public readonly canaryState: string;
 
   /**
-   * canary name
+   * The name of the canary.
+   *
    * @attribute
    */
   public readonly canaryName: string;
