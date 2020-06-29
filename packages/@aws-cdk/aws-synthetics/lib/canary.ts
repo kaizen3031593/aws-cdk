@@ -331,7 +331,7 @@ export class Canary extends CanaryBase {
   }
 
   /**
-   * Returns a Success Percent metric for the canary
+   * Returns an alarm for the canary
    *
    * @default - success percent averaged over 5 minutes
    */
