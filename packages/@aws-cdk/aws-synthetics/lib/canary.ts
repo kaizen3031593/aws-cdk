@@ -6,42 +6,6 @@ import { Construct, Duration, Resource, ResourceProps } from '@aws-cdk/core';
 import { CfnCanary } from '../lib';
 import { Code } from './code';
 
-// ALERT: this should eventually go into Runtime.ts
-/**
- * Canary runtime version.
- *
- * Currently only 'syn-1.0' is a valid runtime. This includes the Lambda
- * runtime NodeJS 10.x. Make sure that your canary script is compatible
- * with NodeJS 10.x.
- *
- * In the future, if you need to use a runtime that doesn't exist as
- * a static member, you can instantiate a 'Runtime' object, e.g.:
- * 'new Runtime('syn-2.0')'.
- */
-export class Runtime {
-  /**
-   * Synthetics library 1.0 and handler code 1.0. Compatible with
-   * Lambda runtime NodeJS 10.x.
-   */
-  public static readonly SYN_1_0 = new Runtime('syn-1.0');
-
-  /**
-   * The name of the runtime version, as expected by the Canary resource.
-   */
-  public readonly name: string;
-
-  constructor(name: string) {
-    this.name = name;
-  }
-
-  /**
-   * The runtime version expressed as a string
-   */
-  public toString(): string {
-    return this.name;
-  }
-}
-
 /**
  * The expression specifies the rate that the Canary runs.
  *
@@ -53,26 +17,26 @@ export class Runtime {
  * If you need to use an expression that doesn't exist as a static member, you can
  * instantiate a 'Expression' object, e.g: 'new Expression('rate(15 minutes)')'.
  */
-export class Expression {
+export class Rate {
   /**
    * The expression rate(1 minute)
    */
-  public static readonly ONE_MINUTE = new Expression('rate(1 minute)');
+  public static readonly ONE_MINUTE = new Rate('rate(1 minute)');
 
   /**
    * The expression rate(5 minutes)
    */
-  public static readonly FIVE_MINUTES = new Expression('rate(5 minutes)');
+  public static readonly FIVE_MINUTES = new Rate('rate(5 minutes)');
 
   /**
    * The expression rate(1 hour)
    */
-  public static readonly ONE_HOUR = new Expression('rate(1 hour)');
+  public static readonly ONE_HOUR = new Rate('rate(1 hour)');
 
   /**
    * The expression rate(0 minute)
    */
-  public static readonly RUN_ONCE = new Expression('rate(0 minute');
+  public static readonly RUN_ONCE = new Rate('rate(0 minute');
 
   /**
    * The expression that is expected by the Canary resource
@@ -84,7 +48,7 @@ export class Expression {
   }
 
   /**
-   * The expression expressed as a string
+   * The rate expressed as a string
    */
   public toString(): string {
     return this.expression;
@@ -140,7 +104,7 @@ export interface CanaryOptions extends ResourceProps {
    *
    * @default Duration.seconds(0)
    */
-  readonly duration?: Duration;
+  readonly lifetime?: Duration;
 
   /**
    * How often the canary will run during the duration. The syntax for expression is 'rate(number unit)'
@@ -151,14 +115,14 @@ export interface CanaryOptions extends ResourceProps {
    *
    * @default 'rate(0 minute)'
    */
-  readonly expression?: Expression;
+  readonly expression?: Rate;
 
   /**
    * Whether or not the canary should start after creation.
    *
-   * @default false
+   * @default true
    */
-  readonly startCanary?: boolean;
+  readonly enableCanary?: boolean;
 
   /**
    * How many days should successful runs be retained
@@ -197,11 +161,6 @@ export interface CanaryProps extends CanaryOptions {
    * it will be possible to specify an asset or an s3 bucket where the code is.
    */
   readonly code: Code;
-
-  /**
-   * The runtime version of the canary. Currently, only 'syn-1.0' is allowed.
-   */
-  readonly runtime: Runtime;
 }
 
 /**
@@ -247,9 +206,7 @@ export class Canary extends CanaryBase {
   public readonly canaryName: string;
 
   constructor(scope: Construct, id: string, props: CanaryProps) {
-    super(scope, id, {
-      physicalName: props.canaryName,
-    });
+    super(scope, id);
 
     const s3Location = props.artifactS3Location || new s3.Bucket(this, 'ServiceBucket').s3UrlForObject();
 
@@ -275,8 +232,8 @@ export class Canary extends CanaryBase {
       inlinePolicies,
     });
 
-    const duration = props.duration || Duration.seconds(0);
-    const expression = props.expression || Expression.ONE_MINUTE;
+    const duration = props.lifetime || Duration.seconds(0);
+    const expression = props.rate || Rate.ONE_MINUTE;
     const timeout = props.timeout || Duration.seconds(60);
 
     const code = props.code.bind(this);
@@ -284,15 +241,17 @@ export class Canary extends CanaryBase {
     const resource: CfnCanary = new CfnCanary(this, 'Resource', {
       artifactS3Location: s3Location,
       executionRoleArn: this.role.roleArn,
-      startCanaryAfterCreation: props.startCanary ?? false,
-      runtimeVersion: props.runtime.toString(),
-      name: this.physicalName,
+      startCanaryAfterCreation: props.enableCanary ?? true,
+      runtimeVersion: 'syn-1.0',
+      name: props.canaryName || 'generatedname',
       runConfig: { timeoutInSeconds: timeout.toSeconds()},
       schedule: { durationInSeconds: String(duration.toSeconds()), expression: expression.toString() },
       failureRetentionPeriod: props.failureRetentionPeriod?.toDays(),
       successRetentionPeriod: props.successRetentionPeriod?.toDays(),
       code: { handler: props.handler, script: code.inlineCode},
     });
+    // resource.getAtt('state');
+    resource.node.addDependency(this.role);
     this.canaryId = resource.attrId;
     this.canaryState = resource.attrState;
     this.canaryName = this.getResourceNameAttribute(resource.ref);
@@ -341,7 +300,7 @@ export class Canary extends CanaryBase {
       threshold: props?.threshold ?? 99,
       evaluationPeriods: props?.evaluationPeriods ?? 2,
       alarmName: props?.alarmName ?? id,
-    }
+    };
     return new Alarm(this, id, alarmProperties);
   }
 }

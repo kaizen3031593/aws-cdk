@@ -6,6 +6,8 @@ import { Construct } from '@aws-cdk/core';
  */
 export abstract class Code {
   /**
+   * Specify Code parameter from inline.
+   *
    * @returns `CanaryInlineCode` with inline code.
    * @param code The actual handler code (limited to 4KiB)
    */
@@ -24,34 +26,49 @@ export abstract class Code {
 
 }
 
+/**
+ * Codeconfig
+ */
 export interface CodeConfig {
   /**
    * The location of the code in S3 (mutually exclusive with `inlineCode`).
+   *
+   * @default none
    */
   readonly s3Location?: s3.Location;
 
   /**
    * Inline code (mutually exclusive with `s3Location`).
+   *
+   * @default none
    */
   readonly inlineCode?: string;
 }
 
+/**
+ * InlineCode
+ */
 export class InlineCode extends Code {
   constructor(private code: string) {
     super();
 
-    if(code.length === 0) {
+    if (code.length === 0) {
       throw new Error('Canary inline code cannot be empty');
     }
 
-    if(code.length > 4096) {
+    if (code.length > 4096) {
       throw new Error('Canary source is too large, must be <= 4096 but is ' + code.length);
     }
   }
 
+  /**
+   * Bind to the resource
+   *
+   * @param _scope - the construct
+   */
   public bind(_scope: Construct): CodeConfig {
     return {
       inlineCode: this.code,
-    }
-  };
+    };
+  }
 }
