@@ -1,3 +1,4 @@
+import { Alarm, AlarmProps, Metric, MetricOptions } from '@aws-cdk/aws-cloudwatch';
 import * as ec2 from '@aws-cdk/aws-ec2';
 import * as iam from '@aws-cdk/aws-iam';
 import * as s3 from '@aws-cdk/aws-s3';
@@ -295,5 +296,52 @@ export class Canary extends CanaryBase {
     this.canaryId = resource.attrId;
     this.canaryState = resource.attrState;
     this.canaryName = this.getResourceNameAttribute(resource.ref);
+  }
+
+  /**
+   * Returns a new metric for the canary
+   *
+   * @default avg over 5 minutes
+   */
+  public metric(metricName: string, props?: MetricOptions): Metric {
+    return new Metric({
+      metricName,
+      namespace: 'CloudWatchSynthetics',
+      statistic: 'avg',
+      ...props,
+    }).attachTo(this);
+  }
+
+  /**
+   * Returns a Duration metric for the canary
+   *
+   * @default avg over 5 minutes
+   */
+  public metricDuration(props?: MetricOptions): Metric {
+    return this.metric('Duration', props);
+  }
+
+  /**
+   * Returns a Success Percent metric for the canary
+   *
+   * @default avg over 5 minutes
+   */
+  public metricSuccess(props?: MetricOptions): Metric {
+    return this.metric('SuccessPercent', props);
+  }
+
+  /**
+   * Returns a Success Percent metric for the canary
+   *
+   * @default - success percent averaged over 5 minutes
+   */
+  public addAlarm(id: string, props?: AlarmProps): Alarm {
+    const alarmProperties = {
+      metric: props?.metric ?? this.metric('SuccessPercent'),
+      threshold: props?.threshold ?? 99,
+      evaluationPeriods: props?.evaluationPeriods ?? 2,
+      alarmName: props?.alarmName ?? id,
+    }
+    return new Alarm(this, id, alarmProperties);
   }
 }
