@@ -207,20 +207,6 @@ export interface CanaryProps extends CanaryOptions {
  * Base of a canary
  */
 export abstract class CanaryBase extends Resource {
-  /**
-   * The handler of the canary.
-   */
-  public abstract readonly handler: string;
-
-  /**
-   * The code of the canary.
-   */
-  public abstract readonly code: Code;
-
-  /**
-   * The runtime version of the canary. Currently only 'syn-1.0' is a valid runtime.
-   */
-  public abstract readonly runtime: Runtime;
 }
 
 /**
@@ -228,63 +214,9 @@ export abstract class CanaryBase extends Resource {
  */
 export class Canary extends CanaryBase {
   /**
-   * The handler of the code.
-   */
-  public readonly handler: string;
-
-  /**
-   * The code of the canary.
-   */
-  public readonly code: Code;
-
-  /**
-   * The runtime version of the canary.
-   */
-  public readonly runtime: Runtime;
-
-  /**
-   * The location of the data from runs of the Canary.
-   */
-  public readonly artifactS3Location: string;
-
-  /**
    * Execution role associated with this Canary.
    */
   public readonly role: iam.IRole;
-
-  /**
-   * How long the canary should run before timing out, in seconds.
-   */
-  public readonly timeout: Duration;
-
-  /**
-   * How long the canary should be running, in seconds.
-   */
-  public readonly duration: Duration;
-
-  /**
-   * The rate that the canary should run during the duration time.
-   */
-  public readonly expression: Expression;
-
-  /**
-   * Whether or not the canary should start after creation.
-   */
-  public readonly startCanary: boolean;
-
-  /**
-   * How long successful runs should be stored in s3, in days.
-   *
-   * @default 31
-   */
-  public readonly successRetentionPeriod?: Duration;
-
-  /**
-   * How long failed runs should be stored in s3, in days.
-   *
-   * @default 31
-   */
-  public readonly failureRetentionPeriod?: Duration;
 
   /**
    * VPC network to place Canary network interfaces
@@ -318,7 +250,7 @@ export class Canary extends CanaryBase {
       physicalName: props.canaryName,
     });
 
-    this.artifactS3Location = props.artifactS3Location || new s3.Bucket(this, 'ServiceBucket').s3UrlForObject();
+    const s3Location = props.artifactS3Location || new s3.Bucket(this, 'ServiceBucket').s3UrlForObject();
 
     // Created role will need these policies to run the Canary.
     const policy = new iam.PolicyDocument({
@@ -342,30 +274,23 @@ export class Canary extends CanaryBase {
       inlinePolicies,
     });
 
-    this.duration = props.duration || Duration.seconds(0);
-    this.expression = props.expression || Expression.ONE_MINUTE;
-    this.timeout = props.timeout || Duration.seconds(60);
-    this.startCanary = props.startCanary || false;
-    this.successRetentionPeriod = props.successRetentionPeriod;
-    this.failureRetentionPeriod = props.failureRetentionPeriod;
-
-    this.handler = props.handler;
-    this.code = props.code;
-    this.runtime = props.runtime;
+    const duration = props.duration || Duration.seconds(0);
+    const expression = props.expression || Expression.ONE_MINUTE;
+    const timeout = props.timeout || Duration.seconds(60);
 
     const code = props.code.bind(this);
 
     const resource: CfnCanary = new CfnCanary(this, 'Resource', {
-      artifactS3Location: this.artifactS3Location,
+      artifactS3Location: s3Location,
       executionRoleArn: this.role.roleArn,
-      startCanaryAfterCreation: this.startCanary,
-      runtimeVersion: this.runtime.toString(),
+      startCanaryAfterCreation: props.startCanary ?? false,
+      runtimeVersion: props.runtime.toString(),
       name: this.physicalName,
-      runConfig: { timeoutInSeconds: this.timeout.toSeconds()},
-      schedule: { durationInSeconds: String(this.duration.toSeconds()), expression: this.expression.toString() },
-      failureRetentionPeriod: this.failureRetentionPeriod?.toDays(),
-      successRetentionPeriod: this.successRetentionPeriod?.toDays(),
-      code: { handler: this.handler, script: code.inlineCode},
+      runConfig: { timeoutInSeconds: timeout.toSeconds()},
+      schedule: { durationInSeconds: String(duration.toSeconds()), expression: expression.toString() },
+      failureRetentionPeriod: props.failureRetentionPeriod?.toDays(),
+      successRetentionPeriod: props.successRetentionPeriod?.toDays(),
+      code: { handler: props.handler, script: code.inlineCode},
     });
     this.canaryId = resource.attrId;
     this.canaryState = resource.attrState;
