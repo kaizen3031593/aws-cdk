@@ -84,13 +84,6 @@ export interface CanaryOptions extends ResourceProps {
   readonly role?: iam.IRole;
 
   /**
-   * The name of the canary.
-   *
-   * @default - A unique physical ID will be generated for you and used as the canary's name.
-   */
-  readonly canaryName?: string;
-
-  /**
    * How many seconds the canary should run before timing out.
    *
    * @default - same amount as rate
@@ -161,6 +154,13 @@ export interface CanaryProps extends CanaryOptions {
    * it will be possible to specify an asset or an s3 bucket where the code is.
    */
   readonly code: Code;
+
+  /**
+   * The name of the canary.
+   *
+   * @default - A unique physical ID will be generated for you and used as the canary's name.
+   */
+  readonly canaryName: string;
 }
 
 /**
@@ -243,7 +243,7 @@ export class Canary extends CanaryBase {
       executionRoleArn: this.role.roleArn,
       startCanaryAfterCreation: props.enableCanary ?? true,
       runtimeVersion: 'syn-1.0',
-      name: props.canaryName || 'generatedname',
+      name: props.canaryName,
       runConfig: { timeoutInSeconds: timeout.toSeconds()},
       schedule: { durationInSeconds: String(duration.toSeconds()), expression: expression.toString() },
       failureRetentionPeriod: props.failureRetentionPeriod?.toDays(),
