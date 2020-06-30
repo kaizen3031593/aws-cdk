@@ -291,16 +291,8 @@ export class Canary extends CanaryBase {
 
   /**
    * Returns an alarm for the canary
-   *
-   * @default - success percent averaged over 5 minutes
    */
-  public addAlarm(id: string, props?: AlarmProps): Alarm {
-    const alarmProperties = {
-      metric: props?.metric ?? this.metric('SuccessPercent'),
-      threshold: props?.threshold ?? 99,
-      evaluationPeriods: props?.evaluationPeriods ?? 2,
-      alarmName: props?.alarmName ?? id,
-    };
-    return new Alarm(this, id, alarmProperties);
+  public createAlarm(id: string, props: AlarmProps): Alarm {
+    return new Alarm(this, id, props);
   }
 }
