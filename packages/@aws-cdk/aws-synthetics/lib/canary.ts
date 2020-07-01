@@ -266,6 +266,7 @@ export class Canary extends CanaryBase {
     return new Metric({
       metricName,
       namespace: 'CloudWatchSynthetics',
+      dimensions: { CanaryName: this.canaryName },
       statistic: 'avg',
       ...props,
     }).attachTo(this);
@@ -274,7 +275,7 @@ export class Canary extends CanaryBase {
   /**
    * Returns a Duration metric for the canary
    *
-   * @default avg over 5 minutes
+   * @default avg over 10 minutes
    */
   public metricDuration(props?: MetricOptions): Metric {
     return this.metric('Duration', props);
@@ -283,10 +284,19 @@ export class Canary extends CanaryBase {
   /**
    * Returns a Success Percent metric for the canary
    *
-   * @default avg over 5 minutes
+   * @default avg over 10 minutes
    */
-  public metricSuccess(props?: MetricOptions): Metric {
+  public metricSuccessPercent(props?: MetricOptions): Metric {
     return this.metric('SuccessPercent', props);
+  }
+
+  /**
+   * Returns Failed metric for the canary
+   *
+   * @default avg over 10 minutes
+   */
+  public metricFailed(props?: MetricOptions): Metric {
+    return this.metric('Failed', props);
   }
 
   /**
