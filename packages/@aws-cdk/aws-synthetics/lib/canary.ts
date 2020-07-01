@@ -1,10 +1,10 @@
 import { Alarm, AlarmProps, Metric, MetricOptions } from '@aws-cdk/aws-cloudwatch';
 import * as ec2 from '@aws-cdk/aws-ec2';
 import * as iam from '@aws-cdk/aws-iam';
+import { Code } from '@aws-cdk/aws-lambda';
 import * as s3 from '@aws-cdk/aws-s3';
 import { Construct, Duration, Resource, ResourceProps } from '@aws-cdk/core';
 import { CfnCanary } from '../lib';
-import { Code } from './code';
 
 /**
  * The rate specifies the rate that the Canary runs.
@@ -36,7 +36,7 @@ export class Rate {
   /**
    * The expression rate(0 minute)
    */
-  public static readonly RUN_ONCE = new Rate('rate(0 minute');
+  public static readonly RUN_ONCE = new Rate('rate(0 minute)');
 
   /**
    * The expression that is expected by the Canary resource
@@ -44,6 +44,7 @@ export class Rate {
   public readonly expression: string;
 
   constructor(expression: string) {
+    this.verifyExpression(expression);
     this.expression = expression;
   }
 
@@ -52,6 +53,22 @@ export class Rate {
    */
   public toString(): string {
     return this.expression;
+  }
+
+  private verifyExpression(expression: string) {
+    const exp = expression.split(' ');
+    const rateAndNumber = exp[0].split('(');
+    if (exp.length !== 2 ||
+      rateAndNumber.length !== 2 ||
+      rateAndNumber[0] !== 'rate' ||
+      isNaN(Number(rateAndNumber[1])) ||
+      (exp[1] !== 'minute)' && exp[1] !== 'minutes)' && exp[1] !== 'hour)')) {
+      throw new Error('Expression must follow the syntax \'rate(number unit)\'');
+    }
+    if (exp[1] === 'hour)' && Number(rateAndNumber[1]) > 1 ||
+        exp[1] === 'minutes)' && Number(rateAndNumber[1]) > 60)  {
+      throw new Error('Expression must not be greater than 1 hour');
+    }
   }
 }
 
@@ -243,12 +260,18 @@ export class Canary extends CanaryBase {
       executionRoleArn: this.role.roleArn,
       startCanaryAfterCreation: props.enableCanary ?? true,
       runtimeVersion: 'syn-1.0',
-      name: props.canaryName,
+      name: this.verifyName(props.canaryName),
       runConfig: { timeoutInSeconds: timeout.toSeconds()},
       schedule: { durationInSeconds: String(duration.toSeconds()), expression: expression.toString() },
       failureRetentionPeriod: props.failureRetentionPeriod?.toDays(),
       successRetentionPeriod: props.successRetentionPeriod?.toDays(),
-      code: { handler: props.handler, script: code.inlineCode},
+      code: {
+        handler: this.verifyHandler(props.handler),
+        script: code.inlineCode,
+        s3Bucket: code.s3Location?.bucketName,
+        s3Key: code.s3Location?.objectKey,
+        s3ObjectVersion: code.s3Location?.objectVersion,
+      },
     });
     // resource.getAtt('state');
     resource.node.addDependency(this.role);
@@ -304,5 +327,32 @@ export class Canary extends CanaryBase {
    */
   public createAlarm(id: string, props: AlarmProps): Alarm {
     return new Alarm(this, id, props);
+  }
+
+  /**
+   * Verifies if the given handler ends in '.handler'. Returns the handler if successful and
+   * throws an error if not.
+   *
+   * @param handler - the handler given by the user
+   */
+  private verifyHandler(handler: string): string {
+    if (handler.split('.').length !== 2 || handler.split('.')[1] !== 'handler') {
+      throw new Error('Canary Handler must end in \'.handler\'');
+    }
+    return handler;
+  }
+
+  /**
+   * Verifies that the name fits the regex expression: ^[0-9a-z_\-]+$
+   * Returns the name if successful and throws an error if not.
+   *
+   * @param name - the given name of the canary
+   */
+  private verifyName(name: string): string {
+    const regex = new RegExp('^[0-9a-z_\-]+$');
+    if (!regex.test(name)) {
+      throw new Error('Canary Name must fit the regex expression ^[0-9a-z_\-]+$ (should be lowercase and with no spaces).');
+    }
+    return name;
   }
 }
