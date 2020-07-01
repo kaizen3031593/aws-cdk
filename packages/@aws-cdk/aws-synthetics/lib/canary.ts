@@ -190,6 +190,38 @@ export abstract class CanaryBase extends Resource {
  * The canary.
  */
 export class Canary extends CanaryBase {
+
+  /**
+   * Return the given named metric for all canaries
+   */
+  public static metricAll(metricName: string, props?: MetricOptions): Metric {
+    return new Metric({
+      namespace: 'CloudWatchSynthetics',
+      metricName,
+      ...props,
+    });
+  }
+
+  /**
+   * Metric for SuccessPercent across all canaries
+   *
+   * @default average over 5 minutes
+   */
+  public static metricAllSuccessPercent(props?: MetricOptions): Metric {
+    return this.metricAll('SuccessPercent', { statistic: 'avg', ...props });
+  }
+
+  /**
+   * Metric for Duration across all canaries
+   *
+   * @default average over 5 minutes
+   */
+  public static metricAllDuration(props?: MetricOptions): Metric {
+    return this.metricAll('Duration', { statistic: 'avg', ...props });
+  }
+
+  
+
   /**
    * Execution role associated with this Canary.
    */
