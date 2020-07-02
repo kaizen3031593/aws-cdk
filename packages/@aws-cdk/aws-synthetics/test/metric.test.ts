@@ -1,7 +1,6 @@
 import '@aws-cdk/assert/jest';
 import { Stack } from '@aws-cdk/core';
 import * as synth from '../lib';
-import { objectLike, arrayWith } from '@aws-cdk/assert/lib/assertions/have-resource';
 
 let stack: Stack;
 beforeEach(() => {
@@ -26,7 +25,7 @@ test('Add a metric on a canary', () => {
     namespace: 'CloudWatchSynthetics',
     metricName: 'SuccessPercent',
     statistic: 'Average',
-  })
+  });
 });
 
 test('Add metric success percent', () => {
@@ -47,7 +46,7 @@ test('Add metric success percent', () => {
     namespace: 'CloudWatchSynthetics',
     metricName: 'SuccessPercent',
     statistic: 'Average',
-  })
+  });
 });
 
 test('Add metric failed', () => {
@@ -68,7 +67,7 @@ test('Add metric failed', () => {
     namespace: 'CloudWatchSynthetics',
     metricName: 'Failed',
     statistic: 'Average',
-  })
+  });
 });
 
 test('Add metric failed', () => {
@@ -89,7 +88,7 @@ test('Add metric failed', () => {
     namespace: 'CloudWatchSynthetics',
     metricName: 'Duration',
     statistic: 'Average',
-  })
+  });
 });
 
 test('Can create metrics across all canaries -- success percent', () => {
@@ -102,7 +101,7 @@ test('Can create metrics across all canaries -- success percent', () => {
     namespace: 'CloudWatchSynthetics',
     metricName: 'SuccessPercent',
     statistic: 'Average',
-  })
+  });
 });
 
 test('Can create metrics across all canaries -- duration', () => {
@@ -115,5 +114,5 @@ test('Can create metrics across all canaries -- duration', () => {
     namespace: 'CloudWatchSynthetics',
     metricName: 'Duration',
     statistic: 'Average',
-  })
+  });
 });

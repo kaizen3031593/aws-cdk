@@ -1,7 +1,7 @@
 import '@aws-cdk/assert/jest';
+import { arrayWith, objectLike } from '@aws-cdk/assert/lib/assertions/have-resource';
 import { Stack } from '@aws-cdk/core';
 import * as synth from '../lib';
-import { objectLike, arrayWith } from '@aws-cdk/assert/lib/assertions/have-resource';
 
 let stack: Stack;
 beforeEach(() => {
@@ -25,7 +25,7 @@ test('Alarm can be created on a canary', () => {
   });
 
   // THEN
-  expect(stack).toHaveResourceLike('AWS::CloudWatch::Alarm',{
+  expect(stack).toHaveResourceLike('AWS::CloudWatch::Alarm', {
     MetricName: 'Failed',
     Namespace: 'CloudWatchSynthetics',
     EvaluationPeriods: 2,

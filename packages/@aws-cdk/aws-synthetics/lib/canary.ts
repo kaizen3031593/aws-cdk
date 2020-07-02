@@ -220,8 +220,6 @@ export class Canary extends CanaryBase {
     return this.metricAll('Duration', { statistic: 'avg', ...props });
   }
 
-  
-
   /**
    * Execution role associated with this Canary.
    */

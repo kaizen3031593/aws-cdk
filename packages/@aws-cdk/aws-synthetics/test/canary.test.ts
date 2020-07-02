@@ -1,9 +1,9 @@
 import '@aws-cdk/assert/jest';
+import { arrayWith, objectLike } from '@aws-cdk/assert/lib/assertions/have-resource';
 import * as iam from '@aws-cdk/aws-iam';
 import * as s3 from '@aws-cdk/aws-s3';
 import { Stack } from '@aws-cdk/core';
 import * as synth from '../lib';
-import { objectLike, arrayWith } from '@aws-cdk/assert/lib/assertions/have-resource';
 
 let stack: Stack;
 beforeEach(() => {
@@ -19,7 +19,7 @@ test('Create a basic canary', () => {
   });
 
   // THEN
-  expect(stack).toHaveResourceLike('AWS::Synthetics::Canary',{
+  expect(stack).toHaveResourceLike('AWS::Synthetics::Canary', {
     Name: 'mycanary',
     Code: {
       Handler: 'index.handler',
@@ -48,7 +48,7 @@ test('Canary can have specified IAM role', () => {
     ],
   }));
 
-  // WHEN 
+  // WHEN
   new synth.Canary(stack, 'Canary', {
     canaryName: 'mycanary',
     handler: 'index.handler',
@@ -57,7 +57,7 @@ test('Canary can have specified IAM role', () => {
   });
 
   // THEN
-  expect(stack).toHaveResourceLike('AWS::Synthetics::Canary',{
+  expect(stack).toHaveResourceLike('AWS::Synthetics::Canary', {
     Name: 'mycanary',
     Code: {
       Handler: 'index.handler',
@@ -73,17 +73,17 @@ test('Canary can have specified IAM role', () => {
 test('Canary can have specified s3 Bucket', () => {
   // GIVEN
   const bucket = new s3.Bucket(stack, 'mytestbucket');
-  
-  // WHEN 
+
+  // WHEN
   new synth.Canary(stack, 'Canary', {
     canaryName: 'mycanary',
     handler: 'index.handler',
     code: synth.Code.fromInline('foo'),
     artifactS3Location: bucket.urlForObject(),
   });
-  
+
   // THEN
-  expect(stack).toHaveResourceLike('AWS::Synthetics::Canary',{
+  expect(stack).toHaveResourceLike('AWS::Synthetics::Canary', {
     Name: 'mycanary',
     Code: {
       Handler: 'index.handler',
@@ -97,16 +97,16 @@ test('Canary can have specified s3 Bucket', () => {
 });
 
 test('Canary can have specified rate', () => {
-  // WHEN 
+  // WHEN
   new synth.Canary(stack, 'Canary', {
     canaryName: 'mycanary',
     handler: 'index.handler',
     code: synth.Code.fromInline('foo'),
     rate: synth.Rate.RUN_ONCE,
   });
-  
+
   // THEN
-  expect(stack).toHaveResourceLike('AWS::Synthetics::Canary',{
+  expect(stack).toHaveResourceLike('AWS::Synthetics::Canary', {
     Name: 'mycanary',
     Code: {
       Handler: 'index.handler',
@@ -140,7 +140,7 @@ function defineCanaryWithHandler(handler: string) {
     canaryName: 'mycanary',
     handler,
     code: synth.Code.fromInline('foo'),
-  }); 
+  });
 }
 
 function defineCanaryWithName(name: string) {
@@ -148,7 +148,7 @@ function defineCanaryWithName(name: string) {
     canaryName: name,
     handler: 'index.handler',
     code: synth.Code.fromInline('foo'),
-  }); 
+  });
 }
 
 function defineCanaryWithRate(rate: synth.Rate) {
