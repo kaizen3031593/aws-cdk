@@ -2,7 +2,7 @@ import '@aws-cdk/assert/jest';
 import { arrayWith, objectLike } from '@aws-cdk/assert/lib/assertions/have-resource';
 import * as iam from '@aws-cdk/aws-iam';
 import * as s3 from '@aws-cdk/aws-s3';
-import { Stack } from '@aws-cdk/core';
+import { Duration, Stack } from '@aws-cdk/core';
 import * as synth from '../lib';
 
 let stack: Stack;
@@ -116,6 +116,113 @@ test('Canary can have specified rate', () => {
     Schedule: objectLike({
       Expression: 'rate(0 minute)',
     }),
+  });
+});
+
+test('Canary can have custom rate', () => {
+  // WHEN
+  new synth.Canary(stack, 'Canary', {
+    canaryName: 'mycanary',
+    handler: 'index.handler',
+    code: synth.Code.fromInline('foo'),
+    rate: new synth.Rate('rate(20 minutes)'),
+  });
+
+  // THEN
+  expect(stack).toHaveResourceLike('AWS::Synthetics::Canary', {
+    Name: 'mycanary',
+    Code: {
+      Handler: 'index.handler',
+      Script: 'foo',
+    },
+    RuntimeVersion: 'syn-1.0',
+    Schedule: objectLike({
+      Expression: 'rate(20 minutes)',
+    }),
+  });
+});
+
+test('Canary can disable startCanaryAfterCreation', () => {
+  // WHEN
+  new synth.Canary(stack, 'Canary', {
+    canaryName: 'mycanary',
+    handler: 'index.handler',
+    code: synth.Code.fromInline('foo'),
+    enableCanary: false,
+  });
+
+  // THEN
+  expect(stack).toHaveResourceLike('AWS::Synthetics::Canary', {
+    Name: 'mycanary',
+    Code: {
+      Handler: 'index.handler',
+      Script: 'foo',
+    },
+    RuntimeVersion: 'syn-1.0',
+    StartCanaryAfterCreation: false,
+  });
+});
+
+test('Canary can set lifetime', () => {
+  // WHEN
+  new synth.Canary(stack, 'Canary', {
+    canaryName: 'mycanary',
+    handler: 'index.handler',
+    code: synth.Code.fromInline('foo'),
+    lifetime: Duration.hours(1),
+  });
+
+  // THEN
+  expect(stack).toHaveResourceLike('AWS::Synthetics::Canary', {
+    Name: 'mycanary',
+    Code: {
+      Handler: 'index.handler',
+      Script: 'foo',
+    },
+    RuntimeVersion: 'syn-1.0',
+    Schedule: objectLike({DurationInSeconds: '3600'}),
+  });
+});
+
+test('Canary can set successRetentionPeriod', () => {
+  // WHEN
+  new synth.Canary(stack, 'Canary', {
+    canaryName: 'mycanary',
+    handler: 'index.handler',
+    code: synth.Code.fromInline('foo'),
+    successRetentionPeriod: Duration.days(1),
+  });
+
+  // THEN
+  expect(stack).toHaveResourceLike('AWS::Synthetics::Canary', {
+    Name: 'mycanary',
+    Code: {
+      Handler: 'index.handler',
+      Script: 'foo',
+    },
+    RuntimeVersion: 'syn-1.0',
+    SuccessRetentionPeriod: 1,
+  });
+});
+
+test('Canary can set failureRetentionPeriod', () => {
+  // WHEN
+  new synth.Canary(stack, 'Canary', {
+    canaryName: 'mycanary',
+    handler: 'index.handler',
+    code: synth.Code.fromInline('foo'),
+    failureRetentionPeriod: Duration.days(1),
+  });
+
+  // THEN
+  expect(stack).toHaveResourceLike('AWS::Synthetics::Canary', {
+    Name: 'mycanary',
+    Code: {
+      Handler: 'index.handler',
+      Script: 'foo',
+    },
+    RuntimeVersion: 'syn-1.0',
+    FailureRetentionPeriod: 1,
   });
 });
 

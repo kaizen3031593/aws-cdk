@@ -303,8 +303,9 @@ export class Canary extends CanaryBase {
         s3ObjectVersion: code.s3Location?.objectVersion,
       },
     });
-    // resource.getAtt('state');
     resource.node.addDependency(this.role);
+
+    // this.canaryState = resource.getAtt('state').toString();
     this.canaryId = resource.attrId;
     this.canaryState = resource.attrState;
     this.canaryName = this.getResourceNameAttribute(resource.ref);
