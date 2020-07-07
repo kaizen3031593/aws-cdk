@@ -3,7 +3,7 @@ import * as ec2 from '@aws-cdk/aws-ec2';
 import * as iam from '@aws-cdk/aws-iam';
 import { Code } from '@aws-cdk/aws-lambda';
 import * as s3 from '@aws-cdk/aws-s3';
-import { Construct, Duration, Resource, ResourceProps } from '@aws-cdk/core';
+import { Construct, Duration, Resource, ResourceProps, IResource } from '@aws-cdk/core';
 import { CfnCanary } from '../lib';
 
 /**
@@ -180,10 +180,22 @@ export interface CanaryProps extends CanaryOptions {
   readonly canaryName: string;
 }
 
+export interface ICanary extends IResource {
+  // Should extend iam.IGrantable, ec2.IConnectable
+  // Should have all the properties and method signatures associated with a canary
+}
+
+/**
+ * Represents a Canary defined outside of this stack.
+ */
+export interface CanaryAttributes {
+  // All you need to find a canary from outside the stack
+}
+
 /**
  * Base of a canary
  */
-export abstract class CanaryBase extends Resource {
+export abstract class CanaryBase extends Resource implements ICanary {
 }
 
 /**
