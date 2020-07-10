@@ -1,5 +1,5 @@
 export * from './canary';
-export { Code } from '@aws-cdk/aws-lambda';
+export * from './code';
 
 // AWS::Synthetics CloudFormation Resources:
 export * from './synthetics.generated';

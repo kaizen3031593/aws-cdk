@@ -230,8 +230,16 @@ test('Canary returns error when handler is specified incorrectly', () => {
   expect(() => defineCanaryWithHandler('index.function')).toThrowError('Canary Handler must end in \'.handler\'');
 });
 
+test('Canary handler must be less than 21 characters', () => {
+  expect(() => defineCanaryWithHandler('canary-name-long.handler')).toThrowError('Canary Handler must be less than 21 characters.');
+});
+
 test('Canary returns error when name is specified incorrectly', () => {
-  expect(() => defineCanaryWithName('myCanary')).toThrowError('Canary Name must fit the regex expression ^[0-9a-z_\-]+$ (should be lowercase and with no spaces).');
+  expect(() => defineCanaryWithName('myCanary')).toThrowError('Canary Name must be lowercase, numbers, hyphens, or underscores (no spaces).');
+});
+
+test('Canary name must be less than 21 characters', () => {
+  expect(() => defineCanaryWithName('canary-name-super-long')).toThrowError('Canary Name must be less than 21 characters');
 });
 
 test('Canary returns error when custom rate has wrong syntax', () => {

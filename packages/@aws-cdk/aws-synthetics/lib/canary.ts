@@ -1,10 +1,9 @@
 import { Alarm, AlarmProps, Metric, MetricOptions } from '@aws-cdk/aws-cloudwatch';
 import * as ec2 from '@aws-cdk/aws-ec2';
 import * as iam from '@aws-cdk/aws-iam';
-import { Code } from '@aws-cdk/aws-lambda';
 import * as s3 from '@aws-cdk/aws-s3';
 import { Construct, Duration, Resource, ResourceProps, IResource } from '@aws-cdk/core';
-import { CfnCanary } from '../lib';
+import { CfnCanary, Code } from '../lib';
 
 /**
  * The rate specifies the rate that the Canary runs.
@@ -382,6 +381,9 @@ export class Canary extends CanaryBase {
     if (handler.split('.').length !== 2 || handler.split('.')[1] !== 'handler') {
       throw new Error('Canary Handler must end in \'.handler\'');
     }
+    if (handler.length > 21) {
+      throw new Error('Canary Handler must be less than 21 characters.');
+    }
     return handler;
   }
 
@@ -394,7 +396,10 @@ export class Canary extends CanaryBase {
   private verifyName(name: string): string {
     const regex = new RegExp('^[0-9a-z_\-]+$');
     if (!regex.test(name)) {
-      throw new Error('Canary Name must fit the regex expression ^[0-9a-z_\-]+$ (should be lowercase and with no spaces).');
+      throw new Error('Canary Name must be lowercase, numbers, hyphens, or underscores (no spaces).');
+    }
+    if (name.length > 21) {
+      throw new Error('Canary Name must be less than 21 characters');
     }
     return name;
   }
