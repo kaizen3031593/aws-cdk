@@ -154,6 +154,10 @@ export interface CanaryOptions extends ResourceProps {
    * @default none
    */
   readonly vpc?: ec2.IVpc;
+
+  readonly vpcSubnets?: ec2.SubnetSelection;
+
+  readonly securityGroups?: ec2.ISecurityGroup[];
 }
 
 /**
@@ -266,7 +270,7 @@ export class Canary extends CanaryBase {
   constructor(scope: Construct, id: string, props: CanaryProps) {
     super(scope, id);
 
-    const s3Location = props.artifactS3Location || new s3.Bucket(this, 'ServiceBucket').s3UrlForObject();
+    const s3Location = props.artifactS3Location ?? new s3.Bucket(this, 'ServiceBucket').s3UrlForObject();
 
     // Created role will need these policies to run the Canary.
     const policy = new iam.PolicyDocument({
@@ -285,17 +289,25 @@ export class Canary extends CanaryBase {
     });
     const inlinePolicies = { canaryPolicy : policy };
 
-    this.role = props.role || new iam.Role(this, 'ServiceRole', {
+    const managedPolicies = new Array<iam.IManagedPolicy>();
+
+    if (props.vpc) {
+      // Policy that will have ENI creation permissions
+      managedPolicies.push(iam.ManagedPolicy.fromAwsManagedPolicyName('service-role/AWSLambdaVPCAccessExecutionRole'));
+    }
+
+    this.role = props.role ?? new iam.Role(this, 'ServiceRole', {
       assumedBy: new iam.ServicePrincipal('lambda.amazonaws.com'),
       inlinePolicies,
+      managedPolicies,
     });
 
-    const duration = props.lifetime || Duration.seconds(0);
-    const expression = props.rate || Rate.ONE_MINUTE;
-    const timeout = props.timeout || Duration.seconds(60);
+    const duration = props.lifetime ?? Duration.seconds(0);
+    const expression = props.rate ?? Rate.ONE_MINUTE;
+    const timeout = props.timeout ?? Duration.seconds(60);
 
     const code = props.code.bind(this);
-
+    
     const resource: CfnCanary = new CfnCanary(this, 'Resource', {
       artifactS3Location: s3Location,
       executionRoleArn: this.role.roleArn,
@@ -313,8 +325,11 @@ export class Canary extends CanaryBase {
         s3Key: code.s3Location?.objectKey,
         s3ObjectVersion: code.s3Location?.objectVersion,
       },
+      vpcConfig: this.configureVpc(props),
     });
     resource.node.addDependency(this.role);
+
+    props.code.bindToResource(resource);
 
     // this.canaryState = resource.getAtt('state').toString();
     this.canaryId = resource.attrId;
@@ -365,13 +380,6 @@ export class Canary extends CanaryBase {
   }
 
   /**
-   * Returns an alarm for the canary
-   */
-  public createAlarm(id: string, props: AlarmProps): Alarm {
-    return new Alarm(this, id, props);
-  }
-
-  /**
    * Verifies if the given handler ends in '.handler'. Returns the handler if successful and
    * throws an error if not.
    *
@@ -402,5 +410,29 @@ export class Canary extends CanaryBase {
       throw new Error('Canary Name must be less than 21 characters');
     }
     return name;
+  }
+
+  private configureVpc(props: CanaryProps): CfnCanary.VPCConfigProperty | undefined {
+    if ((props.securityGroups !== undefined) && !props.vpc) {
+      throw new Error('Cannot configure \'securityGroups\' without configuring a VPC');
+    }
+    if (!props.vpc) { return undefined; }
+
+    let securityGroups: ec2.ISecurityGroup[];
+    if (props.securityGroups) {
+      securityGroups = props.securityGroups;
+    } else {
+      const securityGroup = props.securityGroups ?? new ec2.SecurityGroup(this, 'SecurityGroup', {
+        vpc: props.vpc,
+        description: 'Automatic security group for Canary ' + this.node.uniqueId,
+      });
+      securityGroups = [securityGroup];
+    }
+
+    const { subnetIds } = props.vpc?.selectSubnets(props.vpcSubnets); 
+    return {
+      subnetIds,
+      securityGroupIds: securityGroups.map(sg => sg.securityGroupId),
+    }
   }
 }

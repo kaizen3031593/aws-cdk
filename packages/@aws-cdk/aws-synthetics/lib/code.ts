@@ -1,9 +1,9 @@
 import * as s3 from '@aws-cdk/aws-s3';
 import * as s3_assets from '@aws-cdk/aws-s3-assets';
 import * as cdk from '@aws-cdk/core';
-import * as fs from 'fs';
-import * as archiver from 'archiver';
 import * as path from 'path';
+import * as fs from 'fs';
+// import * as archiver from 'archiver';
 
 /**
  * The code of the canary. Currently only supports inline code.
@@ -39,6 +39,8 @@ export abstract class Code {
   public bindToResource(_resource: cdk.CfnResource, _options?: ResourceBindOptions) {
     return;
   }
+
+  public abstract readonly isInline: boolean;
 }
 
 /**
@@ -58,10 +60,15 @@ export class AssetCode extends Code {
   public bind(scope: cdk.Construct): CodeConfig {
     // If the same AssetCode is used multiple times, retain only the first instantiation.
     if (!this.asset) {
-      this.asset = this.createAsset(scope);
+      if (path.extname(this.path) === ''){
+        this.verifyPath();
+      }
+      this.asset = new s3_assets.Asset(scope, 'Code', {
+        path: path.join(this.path),
+        ...this.options,
+      });
     }
 
-    // Can remove probably
     if (!this.asset.isZipArchive) {
       throw new Error(`Asset must be a .zip file or a directory (${this.path})`);
     }
@@ -74,28 +81,67 @@ export class AssetCode extends Code {
     };
   }
 
-  private createAsset(scope: cdk.Construct): s3_assets.Asset {
-    const internalZipPath = 'nodejs/node_modules';
-
-    var output = fs.createWriteStream(this.path + '/nodejs.zip');
-    var archive = archiver('zip', {});
-    archive.pipe(output);
-    
-    const filesToAdd = fs.readdirSync(this.path);
-
-    filesToAdd.forEach((file) => {
-      const pathToFile = path.join(this.path, file);
-      archive.file(pathToFile, {
-        name: path.join(internalZipPath, file),
-      }); 
-    });
-    archive.finalize();
-
-    return new s3_assets.Asset(scope, 'Code', {
-      path: output.path as string,
-      ...this.options,
-    });
+  private verifyPath() {
+    const getDirectories = fs.readdirSync(this.path, { withFileTypes: true}).filter(dirent => dirent.isDirectory()).map(dirent => dirent.name);
+    if (!getDirectories.includes('nodejs')) {
+      throw new Error('Local directory must include the folder structure nodejs/node_modules');
+    }
+    const newPath = path.join(this.path, 'nodejs');
+    const getNewDirectories = fs.readdirSync(newPath, { withFileTypes: true}).filter(dirent => dirent.isDirectory()).map(dirent => dirent.name);
+    if (!getNewDirectories.includes('node_modules')) {
+      throw new Error('Local directory must include the folder structure nodejs/node_modules');
+    }
   }
+
+  // private createStructure() {
+  //   const internalZipPath = 'nodejs/node_modules';
+  //   // makes the directory structure if it does not exist
+  //   fs.mkdirSync(path.join(this.path, internalZipPath), { recursive: true });
+  //   const filesToMove = fs.readdirSync(this.path);
+  //   filesToMove.forEach((file) => {
+  //     const pathToFile = path.join(this.path, file);
+  //     if (path.extname(file) == '.js'){
+  //       fs.copyFileSync(pathToFile, path.join(this.path,internalZipPath,file));
+  //       // fs.rename(pathToFile, path.join(this.path, internalZipPath, file), (err) => {
+  //       //   if (err) throw err;
+  //       // });
+  //     }
+  //   })
+  // }
+
+  // private createZip() {
+  //   const internalZipPath = 'nodejs/node_modules';
+
+  //   var output = fs.createWriteStream(this.path + '/nodejs.zip');
+  //   var archive = archiver('zip', {});
+  //   archive.on('warning', function(err: any) {
+  //     if (err.code === 'ENOENT') {
+  //       // log warning
+  //     } else {
+  //       // throw error
+  //       throw err;
+  //     }
+  //   });
+
+  //   archive.on('error', function(err: Error) {
+  //     throw err;
+  //   });
+
+  //   archive.on('finish', function() {
+  //     console.log('canaryScript is zipped');
+  //   });
+  //   archive.pipe(output);
+    
+  //   const filesToAdd = fs.readdirSync(this.path);
+
+  //   filesToAdd.forEach((file) => {
+  //     const pathToFile = path.join(this.path, file);
+  //     archive.file(pathToFile, {
+  //       name: path.join(internalZipPath, file),
+  //     }); 
+  //   });
+  //   archive.finalize();
+  // }
 
   public bindToResource(resource: cdk.CfnResource, options: ResourceBindOptions = { }) {
     if (!this.asset) {

@@ -1,0 +1,137 @@
+{
+  "Resources": {
+    "assetcanary13ServiceBucket1362D80C": {
+      "Type": "AWS::S3::Bucket",
+      "UpdateReplacePolicy": "Retain",
+      "DeletionPolicy": "Retain"
+    },
+    "assetcanary13ServiceRole5D462A3D": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com"
+              }
+            }
+          ],
+          "Version": "2012-10-17"
+        },
+        "Policies": [
+          {
+            "PolicyDocument": {
+              "Statement": [
+                {
+                  "Action": [
+                    "s3:PutObject",
+                    "s3:GetBucketLocation",
+                    "s3:ListAllMyBuckets",
+                    "cloudwatch:PutMetricData",
+                    "logs:CreateLogGroup",
+                    "logs:CreateLogStream",
+                    "logs:PutLogEvents"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": "*"
+                }
+              ],
+              "Version": "2012-10-17"
+            },
+            "PolicyName": "canaryPolicy"
+          }
+        ]
+      }
+    },
+    "assetcanary13665D3B8D": {
+      "Type": "AWS::Synthetics::Canary",
+      "Properties": {
+        "ArtifactS3Location": {
+          "Fn::Join": [
+            "",
+            [
+              "s3://",
+              {
+                "Ref": "assetcanary13ServiceBucket1362D80C"
+              }
+            ]
+          ]
+        },
+        "Code": {
+          "Handler": "canary.handler",
+          "S3Bucket": {
+            "Ref": "AssetParametersdf72d06c2d37a55cb680d0262258d53f82692ebb572d35ce0ffae76a51f3a602S3Bucket513E3DB1"
+          },
+          "S3Key": {
+            "Fn::Join": [
+              "",
+              [
+                {
+                  "Fn::Select": [
+                    0,
+                    {
+                      "Fn::Split": [
+                        "||",
+                        {
+                          "Ref": "AssetParametersdf72d06c2d37a55cb680d0262258d53f82692ebb572d35ce0ffae76a51f3a602S3VersionKey398BC680"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "Fn::Select": [
+                    1,
+                    {
+                      "Fn::Split": [
+                        "||",
+                        {
+                          "Ref": "AssetParametersdf72d06c2d37a55cb680d0262258d53f82692ebb572d35ce0ffae76a51f3a602S3VersionKey398BC680"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            ]
+          }
+        },
+        "ExecutionRoleArn": {
+          "Fn::GetAtt": [
+            "assetcanary13ServiceRole5D462A3D",
+            "Arn"
+          ]
+        },
+        "Name": "asset-canary-13",
+        "RunConfig": {
+          "TimeoutInSeconds": 60
+        },
+        "RuntimeVersion": "syn-1.0",
+        "Schedule": {
+          "DurationInSeconds": "0",
+          "Expression": "rate(1 minute)"
+        },
+        "StartCanaryAfterCreation": true
+      },
+      "DependsOn": [
+        "assetcanary13ServiceRole5D462A3D"
+      ]
+    }
+  },
+  "Parameters": {
+    "AssetParametersdf72d06c2d37a55cb680d0262258d53f82692ebb572d35ce0ffae76a51f3a602S3Bucket513E3DB1": {
+      "Type": "String",
+      "Description": "S3 bucket for asset \"df72d06c2d37a55cb680d0262258d53f82692ebb572d35ce0ffae76a51f3a602\""
+    },
+    "AssetParametersdf72d06c2d37a55cb680d0262258d53f82692ebb572d35ce0ffae76a51f3a602S3VersionKey398BC680": {
+      "Type": "String",
+      "Description": "S3 key for asset version \"df72d06c2d37a55cb680d0262258d53f82692ebb572d35ce0ffae76a51f3a602\""
+    },
+    "AssetParametersdf72d06c2d37a55cb680d0262258d53f82692ebb572d35ce0ffae76a51f3a602ArtifactHash9B840AD0": {
+      "Type": "String",
+      "Description": "Artifact hash for asset \"df72d06c2d37a55cb680d0262258d53f82692ebb572d35ce0ffae76a51f3a602\""
+    }
+  }
+}

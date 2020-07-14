@@ -80,7 +80,8 @@
     "@aws-cdk/aws-cloudwatch": "0.0.0",
     "@aws-cdk/aws-lambda": "0.0.0",
     "archiver":"^4.0.1",
-    "fs":"^0.0.1-security"
+    "fs":"^0.0.1-security",
+    "fs-extra":"^9.0.1"
   },
   "peerDependencies": {
     "@aws-cdk/core": "0.0.0",
@@ -92,7 +93,7 @@
     "@aws-cdk/aws-lambda": "0.0.0"
   },
   "bundledDependencies": [
-    "archiver", "fs"
+    "archiver", "fs", "fs-extra"
   ],
   "engines": {
     "node": ">= 10.13.0 <13 || >=13.7.0"
