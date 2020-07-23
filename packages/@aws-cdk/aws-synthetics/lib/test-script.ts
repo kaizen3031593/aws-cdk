@@ -1,5 +1,5 @@
 import * as s3 from '@aws-cdk/aws-s3';
-import { Construct } from '@aws-cdk/core';
+import { Construct, hashValidator } from '@aws-cdk/core';
 import { Code } from './code';
 
 /**
@@ -31,7 +31,12 @@ export class Test {
    *
    * TODO: implement
    */
-  //public static heartBeat(url: string){}
+  public static heartBeat(url: string){
+    return new Test({
+      handler: 'index.handler',
+      inlineCode: new HeartBeatTemplate(url).inlineCode,
+    });
+  }
 
   /**
    * Use this method to access the template for api Endpoint monitoring. This test will hit the endpoint specified and report
@@ -91,4 +96,34 @@ export interface CustomOptions {
    * The handler for the code
    */
   readonly handler: string,
+}
+
+export class HeartBeatTemplate {
+  readonly inlineCode: string;
+
+  constructor(url: string) {
+    this.inlineCode = `var synthetics = require('Synthetics');
+      const log = require('SyntheticsLogger');
+      
+      const pageLoadBlueprint = async function () {
+      
+          const URL = "${url}";
+      
+          let page = await synthetics.getPage();
+          const response = await page.goto(URL, {waitUntil: 'domcontentloaded', timeout: 30000});
+          //Wait for page to render.
+          //Increase or decrease wait time based on endpoint being monitored.
+          await page.waitFor(15000);
+          await synthetics.takeScreenshot('loaded', 'loaded');
+          let pageTitle = await page.title();
+          log.info('Page title: ' + pageTitle);
+          if (response.status() !== 200) {
+              throw "Failed to load page!";
+          }
+      };
+      
+      exports.handler = async () => {
+          return await pageLoadBlueprint();
+      };`;
+  }
 }
