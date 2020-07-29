@@ -1,7 +1,7 @@
-import * as s3 from '@aws-cdk/aws-s3';
-import * as s3_assets from '@aws-cdk/aws-s3-assets'
-import { Construct } from '@aws-cdk/core';
 import * as path from 'path';
+import * as s3 from '@aws-cdk/aws-s3';
+import * as s3_assets from '@aws-cdk/aws-s3-assets';
+import { Construct } from '@aws-cdk/core';
 
 /**
  * The custom code the canary should run
@@ -20,8 +20,8 @@ export abstract class Code {
   /**
    * TODO implement `fromAsset()`
    */
-  public static fromAsset(path: string, options?: s3_assets.AssetOptions): AssetCode {
-    return new AssetCode(path, options);
+  public static fromAsset(assetPath: string, options?: s3_assets.AssetOptions): AssetCode {
+    return new AssetCode(assetPath, options);
   }
 
   /**
@@ -61,7 +61,7 @@ export interface CodeConfig {
 
 export class AssetCode extends Code {
   private asset: s3_assets.Asset | undefined;
-  constructor(private assetPath: string, private options: s3_assets.AssetOptions){
+  constructor(private assetPath: string, private options?: s3_assets.AssetOptions){
     super();
 
     const directories = path.parse(assetPath).dir.split(path.sep);
