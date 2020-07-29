@@ -1,5 +1,4 @@
 import * as s3 from '@aws-cdk/aws-s3';
-import { Construct, hashValidator } from '@aws-cdk/core';
 import { Code } from './code';
 
 /**
@@ -13,13 +12,8 @@ export class Test {
    * @param code The script you want the canary to run
    * @param handler The handler of the code
    */
-  public static custom(scope: Construct, options: CustomOptions): Test {
-    const codeConfig = options.code.bind(scope);
-    return new Test({
-      handler: options.handler,
-      inlineCode: codeConfig.inlineCode,
-      s3Location: codeConfig.s3Location,
-    });
+  public static custom(options: CustomOptions): Test {
+    return new Test(undefined, options);
   }
 
   /**
@@ -60,13 +54,19 @@ export class Test {
    */
   //public static brokenLink(url: string, options: linkOptions){}
 
-  private constructor(public readonly config: TestConfig){}
+  public readonly test?: TestOptions
+  public readonly custom?: CustomOptions;
+
+  private constructor(test?: TestOptions, custom?: CustomOptions){
+    this.test = test;
+    this.custom = custom;
+  }
 }
 
 /**
- * Configuration property of the test class
+ * Configuration options for the test class
  */
-export interface TestConfig {
+export interface TestOptions {
   /**
    * The location of the code in S3 (mutually exclusive with `inlineCode`).
    */
@@ -98,7 +98,7 @@ export interface CustomOptions {
   readonly handler: string,
 }
 
-export class HeartBeatTemplate {
+class HeartBeatTemplate {
   readonly inlineCode: string;
 
   constructor(url: string) {

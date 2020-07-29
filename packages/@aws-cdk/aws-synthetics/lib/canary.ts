@@ -3,7 +3,7 @@ import * as iam from '@aws-cdk/aws-iam';
 import * as s3 from '@aws-cdk/aws-s3';
 import * as cdk from '@aws-cdk/core';
 import { CfnCanary } from './synthetics.generated';
-import { Test, TestConfig } from './test-script';
+import { Test, TestOptions } from './test-script';
 
 /**
  * Optional properties for a canary
@@ -170,7 +170,15 @@ export class Canary extends cdk.Resource {
     var timeout = props.timeout ?? cdk.Duration.seconds(Math.min(frequency.toSeconds(), 900));
     timeout = cdk.Duration.seconds(Math.min(timeout.toSeconds(), frequency.toSeconds()));
 
-    this.verifyTestConfig(props.test.config);
+    let codeConfig: {handler: string, inlineCode?: string, s3Location?: s3.Location};
+    if(props.test.custom){
+      codeConfig = {
+        handler: props.test.custom.handler,
+        ...props.test.custom.code.bind(this)};
+    } else {
+      codeConfig = {...props.test.test!};
+    }
+    this.verifyTestConfig(codeConfig);
 
     const resource: CfnCanary = new CfnCanary(this, 'Resource', {
       artifactS3Location: s3Location,
@@ -189,11 +197,11 @@ export class Canary extends cdk.Resource {
       failureRetentionPeriod: props.failureRetentionPeriod?.toDays(),
       successRetentionPeriod: props.successRetentionPeriod?.toDays(),
       code: {
-        handler: this.verifyHandler(props.test.config.handler),
-        script: props.test.config.inlineCode, //'exports.handler = async () => {\nconsole.log(\'hello world\');\n};',
-        s3Bucket: props.test.config.s3Location?.bucketName,
-        s3Key: props.test.config.s3Location?.objectKey,
-        s3ObjectVersion: props.test.config.s3Location?.objectVersion,
+        handler: this.verifyHandler(codeConfig.handler),
+        script: codeConfig.inlineCode, //'exports.handler = async () => {\nconsole.log(\'hello world\');\n};',
+        s3Bucket: codeConfig.s3Location?.bucketName,
+        s3Key: codeConfig.s3Location?.objectKey,
+        s3ObjectVersion: codeConfig.s3Location?.objectVersion,
       },
     });
     resource.node.addDependency(this.role);
@@ -322,7 +330,7 @@ export class Canary extends cdk.Resource {
    *
    * @param config the code configuration returned by `Test`
    */
-  private verifyTestConfig(config: TestConfig) {
+  private verifyTestConfig(config: TestOptions) {
     // mutually exclusive
     if ((!config.inlineCode && !config.s3Location) || (config.inlineCode && config.s3Location)) {
       throw new Error('synthetics.Code must specify one of "inlineCode" or "s3Location" but not both');

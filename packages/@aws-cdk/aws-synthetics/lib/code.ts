@@ -1,5 +1,7 @@
 import * as s3 from '@aws-cdk/aws-s3';
+import * as s3_assets from '@aws-cdk/aws-s3-assets'
 import { Construct } from '@aws-cdk/core';
+import * as path from 'path';
 
 /**
  * The custom code the canary should run
@@ -18,9 +20,9 @@ export abstract class Code {
   /**
    * TODO implement `fromAsset()`
    */
-  // public static fromAsset(path: string, options?: s3_assets.AssetOptions): AssetCode {
-  //   return new AssetCode(path, options);
-  // }
+  public static fromAsset(path: string, options?: s3_assets.AssetOptions): AssetCode {
+    return new AssetCode(path, options);
+  }
 
   /**
    * @returns `S3Code` associated with the specified S3 object.
@@ -55,6 +57,36 @@ export interface CodeConfig {
    * Inline code (mutually exclusive with `s3Location`).
    */
   readonly inlineCode?: string;
+}
+
+export class AssetCode extends Code {
+  private asset: s3_assets.Asset | undefined;
+  constructor(private assetPath: string, private options: s3_assets.AssetOptions){
+    super();
+
+    const directories = path.parse(assetPath).dir.split(path.sep);
+    if (directories.length < 2 || directories[0] !== 'nodejs' || directories[1] !== 'node_modules'){
+      throw new Error('Asset must have the file path \'nodejs/node_modules\'');
+    }
+  }
+
+  public bind(scope: Construct): CodeConfig {
+    if (this.asset){
+      throw new Error('Asset already defined');
+    }
+
+    this.asset = new s3_assets.Asset(scope, 'Asset', {
+      path: this.assetPath,
+      ...this.options,
+    });
+
+    return {
+      s3Location: {
+        bucketName: this.asset.s3BucketName,
+        objectKey: this.asset.s3ObjectKey,
+      },
+    };
+  }
 }
 
 /**

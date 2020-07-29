@@ -14,7 +14,7 @@ test('Create a basic canary', () => {
   // WHEN
   new synthetics.Canary(stack, 'Canary', {
     name: 'mycanary',
-    test: synthetics.Test.custom(stack, {
+    test: synthetics.Test.custom({
       code: synthetics.Code.fromInline('exports.handler = async () => {\nconsole.log(\'hello world\');\n};'),
       handler: 'index.handler',
     }),
@@ -34,7 +34,7 @@ test('Create a basic canary', () => {
 test('Create a basic canary with no name', () => {
   // WHEN
   new synthetics.Canary(stack, 'Canary', {
-    test: synthetics.Test.custom(stack, {
+    test: synthetics.Test.custom({
       code: synthetics.Code.fromInline('exports.handler = async () => {\nconsole.log(\'hello world\');\n};'),
       handler: 'index.handler',
     }),
@@ -73,7 +73,7 @@ test('Canary can have specified IAM role', () => {
   // WHEN
   new synthetics.Canary(stack, 'Canary', {
     name: 'mycanary',
-    test: synthetics.Test.custom(stack, {
+    test: synthetics.Test.custom({
       code: synthetics.Code.fromInline('exports.handler = async () => {\nconsole.log(\'hello world\');\n};'),
       handler: 'index.handler',
     }),
@@ -101,7 +101,7 @@ test('Canary can have specified s3 Bucket', () => {
   // WHEN
   new synthetics.Canary(stack, 'Canary', {
     name: 'mycanary',
-    test: synthetics.Test.custom(stack, {
+    test: synthetics.Test.custom({
       code: synthetics.Code.fromInline('exports.handler = async () => {\nconsole.log(\'hello world\');\n};'),
       handler: 'index.handler',
     }),
@@ -126,7 +126,7 @@ test('Canary can set frequency', () => {
   // WHEN
   new synthetics.Canary(stack, 'Canary', {
     name: 'mycanary',
-    test: synthetics.Test.custom(stack, {
+    test: synthetics.Test.custom({
       code: synthetics.Code.fromInline('exports.handler = async () => {\nconsole.log(\'hello world\');\n};'),
       handler: 'index.handler',
     }),
@@ -149,7 +149,7 @@ test('Canary can set timeToLive', () => {
   // WHEN
   new synthetics.Canary(stack, 'Canary', {
     name: 'mycanary',
-    test: synthetics.Test.custom(stack, {
+    test: synthetics.Test.custom({
       code: synthetics.Code.fromInline('exports.handler = async () => {\nconsole.log(\'hello world\');\n};'),
       handler: 'index.handler',
     }),
@@ -172,7 +172,7 @@ test('Canary can set timeout', () => {
   // WHEN
   new synthetics.Canary(stack, 'Canary', {
     name: 'mycanary',
-    test: synthetics.Test.custom(stack, {
+    test: synthetics.Test.custom({
       code: synthetics.Code.fromInline('exports.handler = async () => {\nconsole.log(\'hello world\');\n};'),
       handler: 'index.handler',
     }),
@@ -195,7 +195,7 @@ test('Canary cannot set timeout value to be greater than frequency', () => {
   // WHEN
   new synthetics.Canary(stack, 'Canary', {
     name: 'mycanary',
-    test: synthetics.Test.custom(stack, {
+    test: synthetics.Test.custom({
       code: synthetics.Code.fromInline('exports.handler = async () => {\nconsole.log(\'hello world\');\n};'),
       handler: 'index.handler',
     }),
@@ -220,7 +220,7 @@ test('Timeout is set to frequency when unspecified', () => {
   // WHEN
   new synthetics.Canary(stack, 'Canary', {
     name: 'mycanary',
-    test: synthetics.Test.custom(stack, {
+    test: synthetics.Test.custom({
       code: synthetics.Code.fromInline('exports.handler = async () => {\nconsole.log(\'hello world\');\n};'),
       handler: 'index.handler',
     }),
@@ -244,7 +244,7 @@ test('Canary can set memorySize', () => {
   // WHEN
   new synthetics.Canary(stack, 'Canary', {
     name: 'mycanary',
-    test: synthetics.Test.custom(stack, {
+    test: synthetics.Test.custom({
       code: synthetics.Code.fromInline('exports.handler = async () => {\nconsole.log(\'hello world\');\n};'),
       handler: 'index.handler',
     }),
@@ -275,7 +275,7 @@ test('Canary can disable startCanaryAfterCreation', () => {
   // WHEN
   new synthetics.Canary(stack, 'Canary', {
     name: 'mycanary',
-    test: synthetics.Test.custom(stack, {
+    test: synthetics.Test.custom({
       code: synthetics.Code.fromInline('exports.handler = async () => {\nconsole.log(\'hello world\');\n};'),
       handler: 'index.handler',
     }),
@@ -298,7 +298,7 @@ test('Canary can set successRetentionPeriod', () => {
   // WHEN
   new synthetics.Canary(stack, 'Canary', {
     name: 'mycanary',
-    test: synthetics.Test.custom(stack, {
+    test: synthetics.Test.custom({
       code: synthetics.Code.fromInline('exports.handler = async () => {\nconsole.log(\'hello world\');\n};'),
       handler: 'index.handler',
     }),
@@ -321,7 +321,7 @@ test('Canary can set failureRetentionPeriod', () => {
   // WHEN
   new synthetics.Canary(stack, 'Canary', {
     name: 'mycanary',
-    test: synthetics.Test.custom(stack, {
+    test: synthetics.Test.custom({
       code: synthetics.Code.fromInline('exports.handler = async () => {\nconsole.log(\'hello world\');\n};'),
       handler: 'index.handler',
     }),
@@ -351,7 +351,7 @@ test('Canary name must be less than 21 characters', () => {
 function defineCanaryWithName(name: string) {
   new synthetics.Canary(stack, 'Canary', {
     name,
-    test: synthetics.Test.custom(stack, {
+    test: synthetics.Test.custom({
       code: synthetics.Code.fromInline('exports.handler = async () => {\nconsole.log(\'hello world\');\n};'),
       handler: 'index.handler',
     }),
@@ -361,7 +361,7 @@ function defineCanaryWithName(name: string) {
 function defineCanaryWithMemory(mem: Size) {
   new synthetics.Canary(stack, 'Canary', {
     memorySize: mem,
-    test: synthetics.Test.custom(stack, {
+    test: synthetics.Test.custom({
       code: synthetics.Code.fromInline('exports.handler = async () => {\nconsole.log(\'hello world\');\n};'),
       handler: 'index.handler',
     }),

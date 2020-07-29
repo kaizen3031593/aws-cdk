@@ -11,7 +11,7 @@ test('Add metric success percent', () => {
   // GIVEN
   const canary = new synthetics.Canary(stack, 'mycanary', {
     name: 'mycanary',
-    test: synthetics.Test.custom(stack, {
+    test: synthetics.Test.custom({
       code: synthetics.Code.fromInline('exports.handler = async () => {\nconsole.log(\'hello world\');\n};'),
       handler: 'index.handler',
     }),
@@ -34,7 +34,7 @@ test('Add metric failed', () => {
   // GIVEN
   const canary = new synthetics.Canary(stack, 'mycanary', {
     name: 'mycanary',
-    test: synthetics.Test.custom(stack, {
+    test: synthetics.Test.custom({
       code: synthetics.Code.fromInline('exports.handler = async () => {\nconsole.log(\'hello world\');\n};'),
       handler: 'index.handler',
     }),
@@ -57,7 +57,7 @@ test('Add metric failed', () => {
   // GIVEN
   const canary = new synthetics.Canary(stack, 'mycanary', {
     name: 'mycanary',
-    test: synthetics.Test.custom(stack, {
+    test: synthetics.Test.custom({
       code: synthetics.Code.fromInline('exports.handler = async () => {\nconsole.log(\'hello world\');\n};'),
       handler: 'index.handler',
     }),
