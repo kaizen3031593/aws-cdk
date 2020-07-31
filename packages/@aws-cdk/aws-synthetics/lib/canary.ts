@@ -4,6 +4,7 @@ import * as s3 from '@aws-cdk/aws-s3';
 import * as cdk from '@aws-cdk/core';
 import { Schedule } from './schedule';
 import { CfnCanary } from './synthetics.generated';
+import { Test, TestOptions } from './test-script';
 
 /**
  * Properties for a canary
@@ -82,12 +83,11 @@ export interface CanaryProps {
   readonly canaryName?: string;
 
   /**
-   * Specify the endpoint that you want the canary code to hit. Alternatively, you can specify
-   * your own canary script to run.
+   * The type of test that you want your canary to run. Right now, you can only use `Test.custom()`.
+   * In the future, a more robust `Test` class will offer more options.
    *
-   * 🚧 TODO: implement
    */
-  //readonly test: Test;
+  readonly test: Test;
 
 }
 
@@ -164,6 +164,16 @@ export class Canary extends cdk.Resource {
       },
     });
 
+    let codeConfig: TestOptions;
+    if(props.test.customCode){
+      codeConfig = {
+        handler: props.test.customCode.handler,
+        ...props.test.customCode.code.bind(this, this.role)};
+    } else {
+      // 🚧 TODO: implement
+      codeConfig = props.test.testCode!;
+    }
+
     const resource: CfnCanary = new CfnCanary(this, 'Resource', {
       artifactS3Location: this.artifactBucket.s3UrlForObject(),
       executionRoleArn: this.role.roleArn,
@@ -178,8 +188,11 @@ export class Canary extends cdk.Resource {
       successRetentionPeriod: props.successRetentionPeriod?.toDays(),
       // 🚧 TODO: implement
       code: {
-        handler: 'index.handler',
-        script: 'exports.handler = async () => {\nconsole.log(\'hello world\');\n};',
+        handler: codeConfig.handler,
+        script: codeConfig.inlineCode,
+        s3Bucket: codeConfig.s3Location?.bucketName,
+        s3Key: codeConfig.s3Location?.objectKey,
+        s3ObjectVersion: codeConfig.s3Location?.objectVersion,
       },
     });
 

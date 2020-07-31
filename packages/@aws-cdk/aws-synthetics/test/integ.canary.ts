@@ -11,6 +11,11 @@ import * as synthetics from '../lib';
 const app = new cdk.App();
 const stack = new cdk.Stack(app, 'integ-canary');
 
-new synthetics.Canary(stack, 'mycanary', {});
+new synthetics.Canary(stack, 'mycanary', {
+  test: synthetics.Test.custom({
+    handler: 'index.handler',
+    code: synthetics.Code.fromInline('exports.handler = async () => {\nconsole.log(\'hello world\');\n};'),
+  }),
+});
 
 app.synth();
