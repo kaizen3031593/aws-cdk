@@ -12,6 +12,7 @@ export class Test {
    * @param options The code and handler you want to run
    */
   public static custom(options: CustomOptions): Test {
+    Test.validateHandler(options.handler);
     return new Test(undefined, options);
   }
 
@@ -49,39 +50,31 @@ export class Test {
   // public static brokenLink(url: string, options: linkOptions){}
 
   /**
-   * Properties for test templates (mutually exclusive with `custom`).
-   */
-  public readonly testCode?: TestOptions;
-
-  /**
-   * Properties for custom code (mutually exclusive with `test`).
-   */
-  public readonly customCode?: CustomOptions;
-
-  private constructor(testCode?: TestOptions, customCode?: CustomOptions){
-    if ((testCode && customCode) || (!testCode && !customCode)) {
-      throw new Error('One of `test` and `custom` must be specified, but not both');
-    }
-    if (customCode) {
-      this.validateHandler(customCode.handler);
-    }
-    this.testCode = testCode;
-    this.customCode = customCode;
-  }
-
-  /**
    * Verifies that the given handler ends in '.handler'. Returns the handler if successful and
    * throws an error if not.
    *
    * @param handler - the handler given by the user
    */
-  private validateHandler(handler: string) {
+  private static validateHandler(handler: string) {
     if (!handler.endsWith('.handler')) {
       throw new Error('Canary Handler must end in \'.handler\'');
     }
     if (handler.length > 21) {
       throw new Error('Canary Handler must be less than 21 characters');
     }
+  }
+
+  /**
+   * Properties for custom code (mutually exclusive with `test`).
+   */
+  public readonly customCode?: CustomOptions;
+
+  private constructor(
+    /**
+     * Properties for test templates (mutually exclusive with `custom`).
+     */
+    public readonly testCode?: TestOptions, customCode?: CustomOptions){
+    this.customCode = customCode;
   }
 }
 

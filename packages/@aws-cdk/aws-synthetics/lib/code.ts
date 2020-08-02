@@ -74,11 +74,13 @@ export class AssetCode extends Code {
   constructor(private assetPath: string, private options?: s3_assets.AssetOptions){
     super();
 
-    if (!assetPath.includes(`nodejs${path.sep}node_modules`)){
+    //TODO: check if this can be endsWith
+    if (path.extname(assetPath) !== '.zip' && !assetPath.includes(`nodejs${path.sep}node_modules`)){
       throw new Error(`Asset must have the file path \'nodejs${path.sep}node_modules\'`);
     }
   }
 
+  //TODO: check if role works
   public bind(scope: Construct, role: iam.IGrantable): CodeConfig {
     // If the same AssetCode is used multiple times, retain only the first instantiation.
     if (!this.asset){

@@ -121,15 +121,15 @@ export class Canary extends cdk.Resource {
   private readonly artifactBucket: s3.IBucket;
 
   constructor(scope: cdk.Construct, id: string, props: CanaryProps) {
+    if (props.canaryName) {
+      validateName(props.canaryName);
+    }
+
     super(scope, id, {
       physicalName: props.canaryName || cdk.Lazy.stringValue({
         produce: () => this.generateUniqueName(),
       }),
     });
-
-    if (props.canaryName) {
-      this.validateName(props.canaryName);
-    }
 
     this.artifactBucket = props.artifactBucket ?? new s3.Bucket(this, 'ServiceBucket');
 
@@ -244,24 +244,24 @@ export class Canary extends cdk.Resource {
   }
 
   /**
-   * Verifies that the name fits the regex expression: ^[0-9a-z_\-]+$.
-   *
-   * @param name - the given name of the canary
-   */
-  private validateName(name: string) {
-    const regex = new RegExp('^[0-9a-z_\-]+$');
-    if (!regex.test(name)) {
-      throw new Error('Canary Name must be lowercase, numbers, hyphens, or underscores (no spaces)');
-    }
-    if (name.length > 21) {
-      throw new Error('Canary Name must be less than 21 characters');
-    }
-  }
-
-  /**
    * Creates a unique name for the canary. The generated name becomes the physical ID of the canary.
    */
   private generateUniqueName(): string {
     return this.node.uniqueId.toLowerCase().replace(' ', '').substring(0,20);
+  }
+}
+
+/**
+ * Verifies that the name fits the regex expression: ^[0-9a-z_\-]+$.
+ *
+ * @param name - the given name of the canary
+ */
+function validateName(name: string) {
+  const regex = new RegExp('^[0-9a-z_\-]+$');
+  if (!regex.test(name)) {
+    throw new Error('Canary Name must be lowercase, numbers, hyphens, or underscores (no spaces)');
+  }
+  if (name.length > 21) {
+    throw new Error('Canary Name must be less than 21 characters');
   }
 }
